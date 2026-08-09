@@ -30,8 +30,10 @@ export class StudioFrameComponent {
 
   private buildFrameUrl(path: string): string {
     const current = new URL(window.location.href);
-    current.port = '2234';
-    current.pathname = path;
+    // The recorder origin proxies the legacy Studio until its pages are
+    // migrated.  This keeps the browser on the single externally exposed
+    // port and avoids the failed cross-port iframe seen in the old injector.
+    current.pathname = `/studio-proxy${path}`;
     current.search = 'embed=blrec';
     current.hash = '';
     return current.toString();
