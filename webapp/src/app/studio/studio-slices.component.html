@@ -1,0 +1,193 @@
+<section class="studio-page slices-page">
+  <nz-page-header nzTitle="切片工作台" nzSubtitle="原生 Angular / ng-zorro 页面">
+    <nz-page-header-extra>
+      <button nz-button (click)="refresh()" [disabled]="loading || actionBusy">
+        <i nz-icon nzType="reload"></i>刷新
+      </button>
+      <button nz-button (click)="startSelectedSlice()" [disabled]="!selectedTaskId || actionBusy">
+        <i nz-icon nzType="play-circle"></i>切当前录播
+      </button>
+      <button nz-button nzType="primary" (click)="startSlice()" [disabled]="actionBusy">
+        <i nz-icon nzType="scissor"></i>启动待处理任务
+      </button>
+    </nz-page-header-extra>
+  </nz-page-header>
+
+  <nz-alert
+    *ngIf="error"
+    nzType="error"
+    nzShowIcon
+    [nzMessage]="error"
+    class="studio-alert"
+  ></nz-alert>
+
+  <div class="studio-toolbar">
+    <label for="room-filter">UP 主</label>
+    <nz-select
+      id="room-filter"
+      nzAllowClear
+      nzPlaceHolder="全部 UP 主"
+      [(ngModel)]="roomFilter"
+      (ngModelChange)="onRoomChanged()"
+    >
+      <nz-option
+        *ngFor="let room of rooms"
+        [nzValue]="room.room_id"
+        [nzLabel]="room.name || room.room_id"
+      ></nz-option>
+    </nz-select>
+    <span class="toolbar-hint">选中录播后可预览、调整候选边界并提交 Windows 处理</span>
+  </div>
+
+  <div class="studio-grid" [class.busy]="actionBusy">
+    <nz-card nzTitle="录播队列" [nzExtra]="queueCount">
+      <ng-template #queueCount>
+        <nz-tag>{{ recordings.length }} 场</nz-tag>
+      </ng-template>
+      <nz-spin [nzSpinning]="loading">
+        <nz-list nzSize="small" *ngIf="groupedRecordings.length; else noRecordings">
+          <ng-container *ngFor="let group of groupedRecordings">
+            <li nz-list-item class="room-heading">
+              <strong>{{ group.room }}</strong>
+              <span>{{ group.items.length }} 场</span>
+            </li>
+            <li
+              nz-list-item
+              *ngFor="let item of group.items"
+              class="recording-row"
+              [class.selected]="item.task_id === selectedTaskId"
+              (click)="selectRecording(item.task_id)"
+            >
+              <div class="recording-main">
+                <strong>{{ item.source_name || item.source_rel_path }}</strong>
+                <span>{{ item.source_size_mb || 0 }} MB · {{ item.segment_count || 0 }} 候选</span>
+              </div>
+              <nz-tag [nzColor]="statusColor(item.status)">{{ statusLabel(item.status) }}</nz-tag>
+            </li>
+          </ng-container>
+        </nz-list>
+      </nz-spin>
+      <ng-template #noRecordings>
+        <nz-empty nzNotFoundContent="暂无可处理录播"></nz-empty>
+      </ng-template>
+    </nz-card>
+
+    <nz-card nzTitle="源录播预览" [nzExtra]="detailStatus">
+      <ng-template #detailStatus>
+        <nz-tag *ngIf="detail">{{ statusLabel(detail.status) }}</nz-tag>
+      </ng-template>
+      <nz-spin [nzSpinning]="detailLoading">
+        <video
+          *ngIf="selectedMediaUrl; else noPreview"
+          class="source-video"
+          controls
+          preload="metadata"
+          [src]="selectedMediaUrl"
+        ></video>
+        <ng-template #noPreview>
+          <nz-empty nzNotFoundContent="选择录播后显示预览"></nz-empty>
+        </ng-template>
+        <div class="source-meta" *ngIf="detail">
+          <span>{{ detail.source_name }}</span>
+          <span>{{ detail.source_size_mb || 0 }} MB</span>
+          <span>{{ detail.message || '等待复核' }}</span>
+        </div>
+        <nz-divider nzText="候选片段"></nz-divider>
+        <nz-list nzSize="small" *ngIf="detail?.segments?.length; else noSegments">
+          <li
+            nz-list-item
+            *ngFor="let segment of detail?.segments"
+            class="segment-row"
+            [class.selected]="segment.segment_id === selectedSegmentId"
+            (click)="selectSegment(segment)"
+          >
+            <div>
+              <strong>{{ segment.title || '未命名候选' }}</strong>
+              <span class="segment-time">{{ segment.start_seconds | number:'1.0-1' }}s - {{ segment.end_seconds | number:'1.0-1' }}s</span>
+            </div>
+            <nz-tag [nzColor]="statusColor(segment.judge_status)">{{ statusLabel(segment.judge_status) }}</nz-tag>
+          </li>
+        </nz-list>
+        <ng-template #noSegments>
+          <nz-empty nzNotFoundContent="当前录播暂无候选片段"></nz-empty>
+        </ng-template>
+      </nz-spin>
+    </nz-card>
+
+    <nz-card nzTitle="候选复核">
+      <ng-container *ngIf="selectedSegment as segment; else selectHint">
+        <nz-tag [nzColor]="statusColor(segment.judge_status)">{{ statusLabel(segment.judge_status) }}</nz-tag>
+        <form nz-form class="review-form">
+          <nz-form-item>
+            <nz-form-label nzFor="segment-title">标题</nz-form-label>
+            <nz-form-control><input nz-input id="segment-title" [(ngModel)]="titleDraft" name="title" /></nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="segment-description">简介</nz-form-label>
+            <nz-form-control><textarea nz-input id="segment-description" rows="3" [(ngModel)]="descriptionDraft" name="description"></textarea></nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="segment-tags">标签</nz-form-label>
+            <nz-form-control><input nz-input id="segment-tags" [(ngModel)]="tagsDraft" name="tags" placeholder="逗号分隔" /></nz-form-control>
+          </nz-form-item>
+          <div class="range-fields">
+            <label>入点 <input nz-input type="number" min="0" [(ngModel)]="startDraft" name="start" /></label>
+            <label>出点 <input nz-input type="number" min="0" [(ngModel)]="endDraft" name="end" /></label>
+          </div>
+          <div class="review-actions">
+            <button nz-button nzType="primary" type="button" (click)="finalizeSegment()" [disabled]="actionBusy">
+              <i nz-icon nzType="check-circle"></i>通过并生成成片
+            </button>
+            <button nz-button type="button" (click)="saveRange()" [disabled]="actionBusy">保存边界</button>
+            <button nz-button nzDanger type="button" (click)="dropSegment()" [disabled]="actionBusy">丢弃</button>
+          </div>
+          <div class="review-actions secondary-actions">
+            <button nz-button nzSize="small" type="button" (click)="retrySegment()" [disabled]="actionBusy">重新分析</button>
+            <button nz-button nzSize="small" type="button" (click)="renderSegment()" [disabled]="actionBusy">重新渲染</button>
+          </div>
+        </form>
+        <nz-descriptions nzSize="small" [nzColumn]="1" class="segment-stats">
+          <nz-descriptions-item nzTitle="弹幕数">{{ segment.danmaku_count ?? '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="质量分">{{ segment.quality_score == null ? '-' : (segment.quality_score | percent:'1.0-0') }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="上传状态">{{ statusLabel(segment.upload_status) }}</nz-descriptions-item>
+        </nz-descriptions>
+        <nz-alert
+          *ngIf="segment.failure"
+          nzType="warning"
+          nzShowIcon
+          [nzMessage]="segment.failure.summary || '片段处理失败'"
+          [nzDescription]="segment.failure.recovery_action || ''"
+        ></nz-alert>
+      </ng-container>
+      <ng-template #selectHint>
+        <nz-empty nzNotFoundContent="从中间列表选择候选片段"></nz-empty>
+      </ng-template>
+    </nz-card>
+  </div>
+
+  <div class="status-grid">
+    <nz-card nzTitle="切片进度" nzSize="small">
+      <nz-progress
+        [nzPercent]="progress.current_slice_percent || 0"
+        [nzStatus]="progress.status === 'error' ? 'exception' : 'active'"
+      ></nz-progress>
+      <div class="status-line"><span>{{ progress.phase_label || progress.status || '空闲' }}</span><span>{{ progress.message || '暂无任务' }}</span></div>
+    </nz-card>
+    <nz-card nzTitle="Worker 状态" nzSize="small">
+      <div class="status-line"><span>{{ worker.status || worker.process_status || '未知' }}</span><span>{{ worker.message || '' }}</span></div>
+      <div class="review-actions">
+        <button nz-button nzSize="small" (click)="wakeWorker()" [disabled]="actionBusy">唤醒</button>
+        <button nz-button nzSize="small" (click)="stopWorker()" [disabled]="actionBusy">停止</button>
+      </div>
+    </nz-card>
+    <nz-card nzTitle="诊断" nzSize="small">
+      <ng-container *ngIf="diagnosticItems.length; else noDiagnostics">
+        <div class="diagnostic-item" *ngFor="let item of diagnosticItems | slice:0:3">
+          <nz-tag [nzColor]="statusColor(item.status)">{{ item.status || 'info' }}</nz-tag>
+          <span>{{ item.title || item.message }}</span>
+        </div>
+      </ng-container>
+      <ng-template #noDiagnostics><span class="muted">暂无诊断信息</span></ng-template>
+    </nz-card>
+  </div>
+</section>

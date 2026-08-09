@@ -44,11 +44,18 @@ class RecordTaskManager:
         settings_list = self._settings_manager.get_settings({'tasks'}).tasks
         assert settings_list is not None
 
-        for settings in settings_list:
+        # A single task can spend an unbounded amount of time retrying its
+        # danmaku WebSocket handshake.  Loading rooms serially would therefore
+        # hide every later configured room until that first handshake succeeds.
+        # Keep each room independent so ready tasks remain visible and usable
+        # while another room is recovering from Bilibili API/rate-limit errors.
+        async def load_task(settings: TaskSettings) -> None:
             try:
                 await self.add_task(settings)
             except Exception as e:
                 submit_exception(e)
+
+        await asyncio.gather(*(load_task(settings) for settings in settings_list))
 
         logger.info('Load all tasks complete')
 
@@ -101,10 +108,16 @@ class RecordTaskManager:
                 settings.room_id, settings.postprocessing
             )
 
+            startup_operations = []
             if settings.enable_monitor:
-                await task.enable_monitor()
+                startup_operations.append(task.enable_monitor())
             if settings.enable_recorder:
-                await task.enable_recorder()
+                startup_operations.append(task.enable_recorder())
+            if startup_operations:
+                # Monitor startup may retry a Bilibili danmaku handshake for a
+                # long time.  It must not prevent the recorder from entering
+                # its waiting/recording state for the same room.
+                await asyncio.gather(*startup_operations)
         except BaseException as e:
             logger.error(f'Failed to add task {settings.room_id} due to: {repr(e)}')
             await task.destroy()

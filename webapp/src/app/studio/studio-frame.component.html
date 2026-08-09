@@ -1,0 +1,12 @@
+<section class="studio-frame" [attr.aria-label]="title">
+  <div class="studio-frame-loading" *ngIf="loading" aria-live="polite">
+    <nz-spin nzSimple nzSize="large"></nz-spin>
+    <span>正在加载{{ title }}</span>
+  </div>
+  <iframe
+    class="studio-frame-content"
+    [src]="frameUrl"
+    [title]="title"
+    (load)="onFrameLoad()"
+  ></iframe>
+</section>

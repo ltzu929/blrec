@@ -40,10 +40,40 @@
             nzMatchRouter="true"
             nz-tooltip
             nzTooltipPlacement="right"
-            [nzTooltipTitle]="collapsed ? '设置' : ''"
+            [nzTooltipTitle]="collapsed ? '切片' : ''"
+          >
+            <i nz-icon nzType="scissor" nzTheme="outline"></i>
+            <span><a routerLink="/studio/slices">切片</a></span>
+          </li>
+          <li
+            nz-menu-item
+            nzMatchRouter="true"
+            nz-tooltip
+            nzTooltipPlacement="right"
+            [nzTooltipTitle]="collapsed ? '上传' : ''"
+          >
+            <i nz-icon nzType="upload" nzTheme="outline"></i>
+            <span><a routerLink="/studio/uploads">上传</a></span>
+          </li>
+          <li
+            nz-menu-item
+            nzMatchRouter="true"
+            nz-tooltip
+            nzTooltipPlacement="right"
+            [nzTooltipTitle]="collapsed ? '录播设置' : ''"
           >
             <i nz-icon nzType="setting" nzTheme="outline"></i>
-            <span><a routerLink="/settings">设置</a></span>
+            <span><a routerLink="/settings">录播设置</a></span>
+          </li>
+          <li
+            nz-menu-item
+            nzMatchRouter="true"
+            nz-tooltip
+            nzTooltipPlacement="right"
+            [nzTooltipTitle]="collapsed ? '工作台设置' : ''"
+          >
+            <i nz-icon nzType="form" nzTheme="outline"></i>
+            <span><a routerLink="/studio/settings">工作台设置</a></span>
           </li>
           <li
             nz-menu-item

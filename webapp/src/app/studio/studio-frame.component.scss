@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.studio-frame {
+  position: relative;
+  min-height: calc(100vh - var(--app-header-height, 56px));
+  height: 100%;
+  background: #f5f5f5;
+}
+
+.studio-frame-content {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - var(--app-header-height, 56px));
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.studio-frame-loading {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
