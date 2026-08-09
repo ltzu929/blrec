@@ -3,12 +3,19 @@ import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
 
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 import { RouteScrollBehaviour } from './core/services/router-scroll.service.intf';
+import { LegacyStudioRedirectGuard } from './studio/legacy-studio-redirect.guard';
 
 const routes: Routes = [
   {
     path: 'tasks',
+    canActivate: [LegacyStudioRedirectGuard],
     loadChildren: () =>
       import('./tasks/tasks.module').then((m) => m.TasksModule),
+  },
+  {
+    path: 'studio',
+    loadChildren: () =>
+      import('./studio/studio.module').then((m) => m.StudioModule),
   },
   {
     path: 'settings',

@@ -122,7 +122,10 @@ api.include_router(update.router)
 
 class WebAppFiles(StaticFiles):
     def lookup_path(self, path: str) -> Tuple[str, Optional[os.stat_result]]:
-        if path == '404.html':
+        # Angular owns the /studio/* routes.  StaticFiles otherwise treats a
+        # deep link as a missing file, so serve the application shell while
+        # preserving the browser URL for the Angular router.
+        if path == '404.html' or path == 'studio' or path.startswith('studio/'):
             path = 'index.html'
         return super().lookup_path(path)
 
