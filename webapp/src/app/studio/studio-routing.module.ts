@@ -2,22 +2,27 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { StudioFrameComponent } from './studio-frame.component';
+import { StudioSlicesComponent } from './studio-slices.component';
+import { StudioUploadsComponent } from './studio-uploads.component';
+import { StudioSettingsComponent } from './studio-settings.component';
 
 const routes: Routes = [
   {
     path: 'slices',
-    component: StudioFrameComponent,
-    data: { title: '切片', legacyPath: '/tasks' },
+    component: StudioSlicesComponent,
   },
   {
     path: 'uploads',
-    component: StudioFrameComponent,
-    data: { title: '上传', legacyPath: '/uploads' },
+    component: StudioUploadsComponent,
   },
   {
     path: 'settings',
+    component: StudioSettingsComponent,
+  },
+  {
+    path: 'legacy/:view',
     component: StudioFrameComponent,
-    data: { title: '工作台设置', legacyPath: '/settings' },
+    data: { title: '旧版工作台', legacyPath: '/tasks' },
   },
   { path: '', pathMatch: 'full', redirectTo: 'slices' },
 ];

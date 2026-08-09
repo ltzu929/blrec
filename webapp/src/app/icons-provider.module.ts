@@ -11,7 +11,10 @@ import {
   SettingOutline,
   UnorderedListOutline,
   UploadOutline,
-  GithubOutline
+  GithubOutline,
+  ReloadOutline,
+  PlayCircleOutline,
+  CheckCircleOutline
 } from '@ant-design/icons-angular/icons';
 
 const icons = [
@@ -25,6 +28,9 @@ const icons = [
   SettingOutline,
   UnorderedListOutline,
   UploadOutline,
+  ReloadOutline,
+  PlayCircleOutline,
+  CheckCircleOutline,
 ];
 
 @NgModule({
