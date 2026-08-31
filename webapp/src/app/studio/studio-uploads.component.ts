@@ -63,6 +63,13 @@ export class StudioUploadsComponent implements OnInit {
   }
 
   stopWorker(): void {
+    if (
+      !window.confirm(
+        '停止会立即中断正在进行的切片或上传处理，并将未完成任务留在队列中。确认停止吗？'
+      )
+    ) {
+      return;
+    }
     this.actionBusy = true;
     this.api.stopWorker().subscribe({
       next: () => {

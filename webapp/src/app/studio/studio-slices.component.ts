@@ -168,6 +168,13 @@ export class StudioSlicesComponent implements OnInit, OnDestroy {
   }
 
   stopWorker(): void {
+    if (
+      !window.confirm(
+        '停止会立即中断正在进行的 MiMo、ASR 或渲染，并将任务退回待处理队列。确认停止吗？'
+      )
+    ) {
+      return;
+    }
     this.runRequest(this.api.stopWorker(), '已请求停止切片 worker');
   }
 
